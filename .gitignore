@@ -1,7 +1,6 @@
 myenv/
 __pycache__/
 *.pyc
-*.pkl
 *.h5
 *.onnx
 *.log

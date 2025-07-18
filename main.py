@@ -1,6 +1,7 @@
 # main.py
 from fastapi import FastAPI
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 import pickle
 
@@ -10,6 +11,13 @@ with open("xgb_model.pkl", "rb") as f:
 
 # Initialize FastAPI
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, use your app’s domain instead of "*"
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Define input data format
 class ModelInput(BaseModel):

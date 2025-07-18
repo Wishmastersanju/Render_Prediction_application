@@ -1,36 +1,49 @@
-# main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 import pickle
 
 # Load the XGBoost model
-with open("xgb_model.pkl", "rb") as f:
-    model = pickle.load(f)
+try:
+    with open("xgb_model.pkl", "rb") as f:
+        model = pickle.load(f)
+except Exception as e:
+    print(f"Error loading model: {e}")
+    model = None
 
 # Initialize FastAPI
 app = FastAPI()
+
+# Allow CORS (adjust for production)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, use your app’s domain instead of "*"
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Define input data format
+# Define the expected input format
 class ModelInput(BaseModel):
-    feature1: float
-    feature2: float
+    age: float
+    weight: float
 
+# Health check route
 @app.get("/")
 def read_root():
-    return {"message": "ML model API is running"}
+    return {"message": "Hydration predictor API is running"}
 
+# Prediction endpoint
 @app.post("/predict")
 def predict(input: ModelInput):
-    # Convert input to NumPy array
-    features = np.array([[input.feature1, input.feature2]])
-    prediction = model.predict(features)
-    return {"prediction": int(prediction[0])}
+    if model is None:
+        raise HTTPException(status_code=500, detail="Model not loaded")
+
+    try:
+        # Prepare features
+        features = np.array([[input.age, input.weight]])
+        prediction = model.predict(features)
+        return {"prediction": float(prediction[0])}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
